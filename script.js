@@ -1,6 +1,134 @@
 (() => {
 "use strict";
 
+// ============================================================
+// MUSIK LATAR — digenerate sendiri lewat Web Audio API (loop tanpa akhir)
+// Komposisi orisinal bernuansa mars ceria, BUKAN lagu kebangsaan.
+// Browser memblokir autoplay bersuara sebelum ada interaksi pengguna,
+// jadi musik otomatis mulai & loop begitu pengguna klik/ketuk pertama kali.
+// ============================================================
+const MusicEngine = (() => {
+  let ctx=null, masterGain=null, started=false, muted=false;
+  let schedulerTimer=null, nextNoteTime=0, noteIndex=0;
+  const TEMPO=132; // BPM
+  const STEP_DUR=60/TEMPO/2; // tiap step = 1/8 not
+  const LOOKAHEAD=0.12; // detik, jendela penjadwalan
+
+  // melodi mars ceria orisinal (skala mayor C), 32 langkah lalu berulang
+  const MELODY=[
+    523,0,659,0,784,0,659,0, 587,0,698,0,880,0,698,0,
+    523,0,659,0,784,988,880,784, 659,587,523,0,0,0,0,0,
+  ];
+  // pola drum: 1=kick, 2=snare, 0=diam (16 langkah, diulang 2x per loop melodi)
+  const DRUM=[1,0,2,0,1,0,2,0,1,0,2,0,1,1,2,0];
+
+  function ensureCtx(){
+    if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)();
+    if(ctx.state==='suspended') ctx.resume();
+    if(!masterGain){
+      masterGain=ctx.createGain();
+      masterGain.gain.value=muted?0:0.22;
+      masterGain.connect(ctx.destination);
+    }
+  }
+
+  function playNote(freq,time,dur){
+    if(!freq) return;
+    const osc=ctx.createOscillator();
+    const g=ctx.createGain();
+    osc.type='triangle';
+    osc.frequency.setValueAtTime(freq,time);
+    g.gain.setValueAtTime(0.0001,time);
+    g.gain.exponentialRampToValueAtTime(0.5,time+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,time+dur);
+    osc.connect(g).connect(masterGain);
+    osc.start(time); osc.stop(time+dur+0.02);
+  }
+
+  function playKick(time){
+    const osc=ctx.createOscillator();
+    const g=ctx.createGain();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(140,time);
+    osc.frequency.exponentialRampToValueAtTime(45,time+0.15);
+    g.gain.setValueAtTime(0.7,time);
+    g.gain.exponentialRampToValueAtTime(0.001,time+0.18);
+    osc.connect(g).connect(masterGain);
+    osc.start(time); osc.stop(time+0.2);
+  }
+
+  function playSnare(time){
+    const bufferSize=ctx.sampleRate*0.12;
+    const buffer=ctx.createBuffer(1,bufferSize,ctx.sampleRate);
+    const data=buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i]=(Math.random()*2-1)*(1-i/bufferSize);
+    const noise=ctx.createBufferSource();
+    noise.buffer=buffer;
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.35,time);
+    g.gain.exponentialRampToValueAtTime(0.001,time+0.12);
+    noise.connect(g).connect(masterGain);
+    noise.start(time);
+  }
+
+  function scheduler(){
+    while(nextNoteTime < ctx.currentTime + LOOKAHEAD){
+      const melStep = noteIndex % MELODY.length;
+      const drumStep = noteIndex % DRUM.length;
+      playNote(MELODY[melStep], nextNoteTime, STEP_DUR*0.9);
+      const d = DRUM[drumStep];
+      if(d===1) playKick(nextNoteTime);
+      if(d===2) playSnare(nextNoteTime);
+      nextNoteTime += STEP_DUR;
+      noteIndex++;
+    }
+    schedulerTimer=setTimeout(scheduler, 40);
+  }
+
+  function start(){
+    if(started) return;
+    ensureCtx();
+    started=true;
+    nextNoteTime=ctx.currentTime+0.05;
+    noteIndex=0;
+    scheduler();
+  }
+
+  function stop(){
+    started=false;
+    clearTimeout(schedulerTimer);
+  }
+
+  function toggleMute(){
+    muted=!muted;
+    if(masterGain){
+      masterGain.gain.setTargetAtTime(muted?0:0.22, ctx.currentTime, 0.05);
+    }
+    return muted;
+  }
+
+  return { start, stop, toggleMute, isStarted:()=>started };
+})();
+
+const musicToggleBtn=document.getElementById('musicToggleBtn');
+musicToggleBtn.addEventListener('click',()=>{
+  if(!MusicEngine.isStarted()) MusicEngine.start();
+  const muted=MusicEngine.toggleMute();
+  musicToggleBtn.textContent = muted ? "🔇" : "🔊";
+  musicToggleBtn.classList.toggle('muted', muted);
+});
+
+// mulai musik otomatis pada interaksi pertama pengguna (syarat browser untuk audio)
+function autoStartMusicOnce(){
+  MusicEngine.start();
+  document.removeEventListener('click', autoStartMusicOnce);
+  document.removeEventListener('keydown', autoStartMusicOnce);
+  document.removeEventListener('touchstart', autoStartMusicOnce);
+}
+document.addEventListener('click', autoStartMusicOnce);
+document.addEventListener('keydown', autoStartMusicOnce);
+document.addEventListener('touchstart', autoStartMusicOnce);
+
 const menuScreen=document.getElementById('menuScreen'), gameScreen=document.getElementById('gameScreen');
 const levelSelectEl=document.getElementById('levelSelect'), startBtn=document.getElementById('startBtn');
 const hudMapName=document.getElementById('hudMapName'), hudLevelName=document.getElementById('hudLevelName');
