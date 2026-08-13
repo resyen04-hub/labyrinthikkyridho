@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LABIRIN MERDEKA — Maze Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="confetti-layer" id="confettiLayer"></div>
+
+<!-- ===================== MENU AWAL ===================== -->
+<section class="screen" id="menuScreen">
+  <div class="menu-box">
+    <div class="badge">🇮🇩 DIRGAHAYU INDONESIA</div>
+    <h1 class="game-title">LABIRIN<span class="title-red">MERDEKA</span></h1>
+    <p class="game-subtitle">Bantu Si Merah Putih berlari membawa bendera menuju tiang, lewati labirin perjuangan menuju kemerdekaan!</p>
+
+    <div class="level-select" id="levelSelect"></div>
+
+    <button class="btn-start" id="startBtn">🏁 MULAI PERJUANGAN</button>
+    <p class="control-hint">Kontrol: Panah / WASD · Kumpulkan <b>🎖️ Merdeka Point</b> · Hindari <b>💣 Rintangan</b></p>
+  </div>
+</section>
+
+<!-- ===================== LAYAR GAME ===================== -->
+<section class="screen screen--hidden" id="gameScreen">
+
+  <header class="hud">
+    <div class="hud-left">
+      <span class="hud-map-name" id="hudMapName">Peta 1</span>
+      <span class="hud-level-name" id="hudLevelName">Level 1</span>
+    </div>
+    <div class="hud-mid">
+      <div class="stat"><span class="stat-icon">🎖️</span><span id="scoreVal">0</span></div>
+      <div class="stat"><span class="stat-icon">⏱️</span><span id="timeVal">00:00</span></div>
+      <div class="stat"><span class="stat-icon">❤️</span><span id="livesVal">3</span></div>
+    </div>
+    <button class="btn-pause" id="pauseBtn">⏸ Jeda</button>
+  </header>
+
+  <main class="stage-wrap">
+    <canvas id="maze" width="600" height="600"></canvas>
+
+    <div class="overlay overlay--hidden" id="pauseOverlay">
+      <div class="overlay-panel">
+        <h2 class="overlay-title">JEDA</h2>
+        <button class="btn-start" id="resumeBtn">▶ Lanjutkan</button>
+        <button class="btn-secondary" id="menuFromPauseBtn">🏠 Menu Utama</button>
+      </div>
+    </div>
+
+    <div class="overlay overlay--hidden" id="loseOverlay">
+      <div class="overlay-panel">
+        <h2 class="overlay-title overlay-title--danger">GUGUR</h2>
+        <p class="overlay-sub">Semangat! Perjuangan belum selesai.</p>
+        <button class="btn-start" id="retryLevelBtn">🔁 Ulangi Level</button>
+        <button class="btn-secondary" id="menuFromLoseBtn">🏠 Menu Utama</button>
+      </div>
+    </div>
+
+    <div class="overlay overlay--hidden" id="winLevelOverlay">
+      <div class="overlay-panel">
+        <h2 class="overlay-title overlay-title--win">MERDEKA!</h2>
+        <p class="overlay-sub" id="winLevelSub">Level selesai!</p>
+        <p class="overlay-score">Skor: <span id="winLevelScore">0</span></p>
+        <button class="btn-start" id="nextLevelBtn">➜ Level Berikutnya</button>
+        <button class="btn-secondary" id="menuFromWinBtn">🏠 Menu Utama</button>
+      </div>
+    </div>
+
+    <div class="overlay overlay--hidden" id="winMapOverlay">
+      <div class="overlay-panel">
+        <h2 class="overlay-title overlay-title--win">PETA SELESAI!</h2>
+        <p class="overlay-sub" id="winMapSub">Semua level di peta ini berhasil ditaklukkan!</p>
+        <p class="overlay-score">Total Skor: <span id="winMapScore">0</span></p>
+        <button class="btn-start" id="nextMapBtn">➜ Peta Berikutnya</button>
+        <button class="btn-secondary" id="menuFromMapWinBtn">🏠 Menu Utama</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="touch-controls" id="touchControls">
+    <button class="touch-btn touch-up" data-dir="up">▲</button>
+    <button class="touch-btn touch-left" data-dir="left">◀</button>
+    <button class="touch-btn touch-down" data-dir="down">▼</button>
+    <button class="touch-btn touch-right" data-dir="right">▶</button>
+  </div>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
